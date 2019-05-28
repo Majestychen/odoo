@@ -414,10 +414,21 @@ class MailComposer(models.TransientModel):
         # ORM handle the assignation of command list on new onchange (api.v8),
         # this force the complete replacement of x2many field with
         # command and is compatible with onchange api.v7
-        attachment_ids += values.pop('attachment_ids' , [])
+        if (
+            values.get('attachment_ids')
+            and isinstance(values['attachment_ids'], (list, tuple))
+            and isinstance(values['attachment_ids'][0], (list, tuple))
+        ):
+            # Case 1: attachment_ids is already a command
+            attachment_ids = values.pop('attachment_ids' , [])
+        else:
+            # Case 2: attachment_ids is a list of IDs
+            attachment_ids += values.pop('attachment_ids' , [])
+            if attachment_ids:
+                attachment_ids = [(6, 0, attachment_ids)]
         values = self._convert_to_write(values)
         if attachment_ids:
-            values.update(attachment_ids=[(6, 0, attachment_ids)])
+            values.update(attachment_ids=attachment_ids)
 
         return {'value': values}
 
